@@ -3,53 +3,258 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Application PWA</title>
-    
-    <!-- Liaison vers le Manifeste -->
+    <title>Gestionnaire de Cartons de Loto</title>
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#007bff">
+    <meta name="theme-color" content="#2c3e50">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
     <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #27ae60;
+            --accent: #e74c3c;
+            --bg: #f8f9fa;
+            --text: #2c3e50;
+        }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background-color: #f8f9fa;
-            color: #333;
-            text-align: center;
         }
-        h1 { color: #007bff; }
-        .card {
+        .container {
+            width: 100%;
+            max-width: 600px;
             background: white;
-            padding: 30px;
+            padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            box-sizing: border-box;
         }
+        h1 { text-align: center; color: var(--primary); font-size: 1.5rem; margin-top: 0; }
+        .section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .section-title { font-weight: bold; margin-bottom: 10px; color: var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        button.secondary { background-color: var(--secondary); }
+        button.accent { background-color: var(--accent); }
+        .grid-input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+        .boulier-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-top: 10px; }
+        .ball {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #eee;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .ball.drawn { background: var(--accent); color: white; transform: scale(1.05); }
+        .carton {
+            border: 2px solid var(--primary);
+            border-radius: 6px;
+            margin-top: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .carton-header { background: var(--primary); color: white; padding: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; font-weight: bold; }
+        .carton-grid { display: grid; grid-template-columns: repeat(9, 1fr); background: var(--primary); gap: 1px; }
+        .cell {
+            background: white;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .cell.empty { background: #e0e0e0; }
+        .cell.marked { background: #ffeaa7; color: #d63031; position: relative; }
+        .cell.marked::after { content: '❌'; position: absolute; font-size: 0.7rem; opacity: 0.7; }
+        .stats { display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 5px; background: #f1f2f6; padding: 6px; border-radius: 4px; }
+        .last-drawn { text-align: center; font-size: 2.5rem; font-weight: bold; color: var(--accent); margin: 10px 0; min-height: 3.5rem; display: flex; align-items: center; justify-content: center; }
+        .flex-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Ma PWA est prête !</h1>
-        <p>Si tout est bien configuré, vous devriez pouvoir installer cette application sur votre écran d'accueil et l'utiliser hors-ligne.</p>
+<div class="container">
+    <h1>🎰 Loto - Suivi de Cartons</h1>
+
+    <!-- SECTION BOULIER / TIRAGE -->
+    <div class="section">
+        <div class="section-title">🔮 Boulier Virtuel / Tirage</div>
+        <div class="last-drawn" id="lastDrawnBall">-</div>
+        <div class="flex-buttons">
+            <button class="accent" onclick="drawNumber()">Tirer un numéro</button>
+            <button style="background:#7f8c8d;" onclick="resetBoulier()">Réinitialiser</button>
+        </div>
+        <div class="boulier-grid" id="boulierContainer"></div>
     </div>
 
-    <!-- Enregistrement du Service Worker -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker enregistré avec succès !', reg))
-                    .catch(err => console.warn('Erreur d\'enregistrement du Service Worker :', err));
-            });
+    <!-- SECTION AJOUT DE CARTONS -->
+    <div class="section">
+        <div class="section-title">🎟️ Ajouter des Cartons</div>
+        <div class="grid-input-group">
+            <input type="number" id="startId" placeholder="N° Début" min="1">
+            <input type="number" id="endId" placeholder="N° Fin" min="1">
+        </div>
+        <button class="secondary" onclick="generateCartonsFromRange()">Générer la série de cartons</button>
+    </div>
+
+    <!-- ZONE D'AFFICHAGE DES CARTONS -->
+    <div id="cartonsContainer"></div>
+</div>
+
+<script>
+    let drawnNumbers = new Set();
+    const boulierContainer = document.getElementById('boulierContainer');
+    
+    function initBoulier() {
+        boulierContainer.innerHTML = '';
+        for(let i = 1; i <= 90; i++) {
+            let ball = document.createElement('div');
+            ball.className = 'ball';
+            ball.id = `ball-${i}`;
+            ball.innerText = i;
+            boulierContainer.appendChild(ball);
         }
-    </script>
-</body>
-</html>
+    }
+
+    function drawNumber() {
+        if(drawnNumbers.size >= 90) { alert('Tous les numéros ont été tirés !'); return; }
+        let num;
+        do { num = Math.floor(Math.random() * 90) + 1; } while(drawnNumbers.has(num));
+        
+        drawnNumbers.add(num);
+        document.getElementById('lastDrawnBall').innerText = num;
+        document.getElementById(`ball-${num}`).classList.add('drawn');
+        checkAllCartons();
+    }
+
+    function resetBoulier() {
+        if(confirm('Réinitialiser le tirage en cours ?')) {
+            drawnNumbers.clear();
+            document.getElementById('lastDrawnBall').innerText = '-';
+            initBoulier();
+            checkAllCartons();
+        }
+    }
+
+    let cartonsList = [];
+
+    function generateCartonsFromRange() {
+        let start = parseInt(document.getElementById('startId').value);
+        let end = parseInt(document.getElementById('endId').value);
+        
+        if(isNaN(start) || isNaN(end) || start > end) { alert('Veuillez entrer une série de numéros valide.'); return; }
+        
+        cartonsList = [];
+        for(let id = start; id <= end; id++) {
+            cartonsList.push(generateSingleCartCode(id));
+        }
+        renderCartons();
+    }
+
+    function generateSingleCartCode(id) {
+        let grid = Array(3).fill().map(() => Array(9).fill(0));
+        
+        for (let r = 0; r < 3; r++) {
+            let placed = 0;
+            let colsUsed = new Set();
+            while(placed < 5) {
+                let c = Math.floor(Math.random() * 9);
+                if(grid[r][c] === 0 && !colsUsed.has(c)) {
+                    let min = c === 0 ? 1 : c * 10;
+                    let max = c === 8 ? 90 : (c * 10) + 9;
+                    grid[r][c] = Math.floor(Math.random() * (max - min + 1)) + min;
+                    colsUsed.add(c);
+                    placed++;
+                }
+            }
+        }
+        return { id: id, grid: grid };
+    }
+
+    function renderCartons() {
+        const container = document.getElementById('cartonsContainer');
+        container.innerHTML = '';
+        
+        cartonsList.forEach(carton => {
+            let cartonDiv = document.createElement('div');
+            cartonDiv.className = 'carton';
+            cartonDiv.id = `carton-${carton.id}`;
+            
+            let header = document.createElement('div');
+            header.className = 'carton-header';
+            header.innerHTML = `<span>Carton N° ${carton.id}</span><span id="status-${carton.id}">En jeu</span>`;
+            cartonDiv.appendChild(header);
+            
+            let gridDiv = document.createElement('div');
+            gridDiv.className = 'carton-grid';
+            
+            for(let r = 0; r < 3; r++) {
+                for(let c = 0; c < 9; c++) {
+                    let val = carton.grid[r][c];
+                    let cell = document.createElement('div');
+                    cell.className = val === 0 ? 'cell empty' : 'cell';
+                    if(val > 0) {
+                        cell.innerText = val;
+                        cell.id = `cell-${carton.id}-${val}`;
+                    }
+                    gridDiv.appendChild(cell);
+                }
+            }
+            cartonDiv.appendChild(gridDiv);
+            
+            let footer = document.createElement('div');
+            footer.className = 'stats';
+            footer.innerHTML = `<span>Lignes complétées : <span id="lines-${carton.id}">0</span>/3</span> <span>Numéros restants : <span id="rem-${carton.id}">15</span></span>`;
+            cartonDiv.appendChild(footer);
+            
+            container.appendChild(cartonDiv);
+        });
+        checkAllCartons();
+    }
+
+    function checkAllCartons() {
+        cartonsList.forEach(carton => {
+            let totalRemaining = 0;
+            let linesCompleted = 0;
+            
+            for(let r = 0; r < 3; r++) {
+                let lineDrawnCount = 0;
+                let lineTotalNumbers = 0;
+                for(let c = 0; c < 9; c++) {
+                    let val = carton.grid[r][c];
+                    if(val > 0) {
+                        lineTotalNumbers++;
