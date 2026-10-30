@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mon Application PWA</title>
+    
+    <!-- Liaison vers le Manifeste -->
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#007bff">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            color: #333;
+            text-align: center;
+        }
+        h1 { color: #007bff; }
+        .card {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Ma PWA est prête !</h1>
+        <p>Si tout est bien configuré, vous devriez pouvoir installer cette application sur votre écran d'accueil et l'utiliser hors-ligne.</p>
+    </div>
+
+    <!-- Enregistrement du Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker enregistré avec succès !', reg))
+                    .catch(err => console.warn('Erreur d\'enregistrement du Service Worker :', err));
+            });
+        }
+    </script>
+</body>
+</html>
